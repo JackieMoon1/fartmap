@@ -1,2 +1,0 @@
-# fartmap
-maps your farts
