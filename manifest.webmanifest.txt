@@ -1,0 +1,14 @@
+{
+  "name": "FartMap",
+  "short_name": "FartMap",
+  "description": "Track little vs big farts with daily, weekly, monthly stats.",
+  "start_url": "/fartmap/",
+  "scope": "/fartmap/",
+  "display": "standalone",
+  "background_color": "#0f1221",
+  "theme_color": "#0f1221",
+  "icons": [
+    { "src": "/fartmap/icons/pwa-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/fartmap/icons/pwa-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
