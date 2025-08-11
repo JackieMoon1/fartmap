@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FartMap — Online</title>
+  <title>FartMap — Online (Fixed)</title>
   <meta name="theme-color" content="#0f1221" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" href="./icons/pwa-192.png" />
@@ -122,122 +122,128 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // ===== CONFIG: fill these in =====
-    const SUPABASE_URL = 'https://rlafhblrnlrnwadmhvuq.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsYWZoYmxybmxybndhZG1odnVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4ODQ1MzksImV4cCI6MjA3MDQ2MDUzOX0.eRIzeWKJXAhW6g4ZJ2_rvqiIdsrFt9C96oKatevtWTc';
+  // ================== CONFIG: PASTE YOUR VALUES ==================
+  const SUPABASE_URL = 'https://rlafhblrnlrnwadmhvuq.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsYWZoYmxybmxybndhZG1odnVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4ODQ1MzksImV4cCI6MjA3MDQ2MDUzOX0.eRIzeWKJXAhW6g4ZJ2_rvqiIdsrFt9C96oKatevtWTc';
+  // ===============================================================
 
-    // ===== Local storage keys =====
-    const STORAGE_KEY = 'fartmap_events_v1';
-    const META_KEY = 'fartmap_meta_v1';
-    const LAST_SYNC_KEY = 'fartmap_last_sync_ts';
-
-    // ===== Supabase client =====
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true }
+  // Register SW early; we'll also bust cache manually by editing sw.js when needed
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(console.error);
     });
+  }
 
-    // ===== Utilities =====
-    const qs = (sel)=> document.querySelector(sel);
-    function loadEvents(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); } catch { return []; } }
-    function saveEvents(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
-    function loadMeta(){ try { return JSON.parse(localStorage.getItem(META_KEY)||'{}'); } catch { return {}; } }
-    function saveMeta(m){ localStorage.setItem(META_KEY, JSON.stringify(m)); }
-    function fmtDate(d){ return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}); }
-    function isSameLocalDay(a,b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
-    function startOfLocalDay(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true }
+  });
 
-    // ===== Auth + username =====
-    async function ensureSignedIn(){
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) return session.user;
-      const { data, error } = await supabase.auth.signInAnonymously();
-      if (error) { alert('Sign-in error: '+ error.message); throw error; }
-      return data.user;
+  // Local storage keys (same as original)
+  const STORAGE_KEY = 'fartmap_events_v1';
+  const META_KEY = 'fartmap_meta_v1';
+  const LAST_SYNC_KEY = 'fartmap_last_sync_ts';
+
+  // Helpers
+  const qs = s => document.querySelector(s);
+  const fmtDate = d => d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+  const isSameLocalDay = (a,b) => a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+  const startOfLocalDay = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  function loadEvents(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); } catch { return []; } }
+  function saveEvents(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+  function loadMeta(){ try { return JSON.parse(localStorage.getItem(META_KEY)||'{}'); } catch { return {}; } }
+  function saveMeta(m){ localStorage.setItem(META_KEY, JSON.stringify(m)); }
+
+  // Auth helpers — force anonymous sign-in when needed, show readable errors
+  async function ensureSignedIn(){
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) return session.user;
+    const { data, error } = await supabase.auth.signInAnonymously();
+    if (error) throw new Error('Sign-in failed: ' + error.message);
+    return data.user;
+  }
+
+  async function getMyProfile(){
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+    if (error) throw error;
+    return data;
+  }
+
+  async function setUsername(username){
+    const clean = username.trim();
+    if (!/^\w{3,20}$/.test(clean)) throw new Error('Use 3–20 letters/numbers/underscore');
+    const user = await ensureSignedIn();
+    const { error } = await supabase.from('profiles').upsert({ id: user.id, username: clean }, { onConflict: 'id' });
+    if (error) throw new Error(error.message);
+    return clean;
+  }
+
+  // Sync local events added since last sync
+  async function syncEvents(){
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const uid = session.user.id;
+    const lastSync = parseInt(localStorage.getItem(LAST_SYNC_KEY)||'0',10);
+    const all = loadEvents();
+    const toPush = all.filter(e => e.ts > lastSync);
+    if (!toPush.length) return;
+    const rows = toPush.map(e => ({ user_id: uid, kind: e.kind, ts: new Date(e.ts).toISOString() }));
+    const { error } = await supabase.from('events').insert(rows);
+    if (!error) localStorage.setItem(LAST_SYNC_KEY, String(Date.now()));
+  }
+
+  async function loadLeaderboard(){
+    const { data, error } = await supabase.from('leaderboard_today').select('*').limit(100);
+    if (error) { console.error(error); return; }
+    const body = qs('#lbBody'); body.innerHTML = '';
+    (data||[]).forEach((r, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i+1}</td><td>${r.username}</td><td><strong>${r.total}</strong></td><td>${r.little}</td><td>${r.big}</td>`;
+      body.appendChild(tr);
+    });
+  }
+
+  function render(){
+    const events = loadEvents();
+    const now = new Date();
+    const todayEvents = events.filter(e => isSameLocalDay(new Date(e.ts), now));
+    qs('#todayDate').textContent = `Today · ${fmtDate(now)}`;
+    qs('#todayLittle').textContent = todayEvents.filter(e=>e.kind==='little').length;
+    qs('#todayBig').textContent = todayEvents.filter(e=>e.kind==='big').length;
+    qs('#todayTotal').textContent = todayEvents.length;
+    qs('#allTime').textContent = events.length;
+    const meta = loadMeta();
+    qs('#streak').textContent = `Streak: ${meta.streak||0}`;
+  }
+
+  function record(kind){
+    const now = new Date();
+    const events = loadEvents();
+    events.push({ ts: now.getTime(), kind });
+    saveEvents(events);
+    updateStreak(now);
+    render();
+    syncEvents().catch(console.error);
+  }
+
+  function updateStreak(now){
+    const meta = loadMeta();
+    const last = meta.lastActiveDay ? new Date(meta.lastActiveDay) : null;
+    const todayStart = startOfLocalDay(now).getTime();
+    if (!last) meta.streak = 1; else {
+      const lastStart = startOfLocalDay(last).getTime();
+      const diff = Math.round((todayStart - lastStart)/86400000);
+      if (diff===1) meta.streak=(meta.streak||0)+1; else if (diff>1) meta.streak=1;
     }
+    meta.lastActiveDay = todayStart; saveMeta(meta);
+  }
 
-    async function getMyProfile(){
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return null;
-      const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
-      return data;
-    }
+  // Run after DOM is ready so handlers always attach
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('[FartMap] script loaded');
 
-    async function setUsername(username){
-      const clean = username.trim();
-      if (!/^\w{3,20}$/.test(clean)) throw new Error('Use 3–20 letters/numbers/underscore');
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not signed in');
-      const row = { id: session.user.id, username: clean };
-      const { error } = await supabase.from('profiles').upsert(row, { onConflict: 'id' });
-      if (error) throw error;
-      return clean;
-    }
-
-    // ===== Sync: push local events added since last sync =====
-    async function syncEvents(){
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const uid = session.user.id;
-      const lastSync = parseInt(localStorage.getItem(LAST_SYNC_KEY)||'0',10);
-      const all = loadEvents();
-      const toPush = all.filter(e => e.ts > lastSync);
-      if (!toPush.length) return;
-      const rows = toPush.map(e => ({ user_id: uid, kind: e.kind, ts: new Date(e.ts).toISOString() }));
-      const { error } = await supabase.from('events').insert(rows);
-      if (!error) localStorage.setItem(LAST_SYNC_KEY, String(Date.now()));
-    }
-
-    // ===== Leaderboard =====
-    async function loadLeaderboard(){
-      const { data, error } = await supabase.from('leaderboard_today').select('*').limit(100);
-      if (error) { console.error(error); return; }
-      const body = qs('#lbBody'); body.innerHTML = '';
-      (data||[]).forEach((r, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${i+1}</td><td>${r.username}</td><td><strong>${r.total}</strong></td><td>${r.little}</td><td>${r.big}</td>`;
-        body.appendChild(tr);
-      });
-    }
-
-    // ===== App logic (local counters from your original app) =====
-    function render(){
-      const events = loadEvents();
-      const now = new Date();
-      const todayEvents = events.filter(e => isSameLocalDay(new Date(e.ts), now));
-      const tLittle = todayEvents.filter(e=>e.kind==='little').length;
-      const tBig = todayEvents.filter(e=>e.kind==='big').length;
-      qs('#todayDate').textContent = `Today · ${fmtDate(now)}`;
-      qs('#todayLittle').textContent = tLittle;
-      qs('#todayBig').textContent = tBig;
-      qs('#todayTotal').textContent = todayEvents.length;
-      qs('#allTime').textContent = events.length;
-      const meta = loadMeta();
-      qs('#streak').textContent = `Streak: ${meta.streak||0}`;
-    }
-
-    function record(kind){
-      const now = new Date();
-      const events = loadEvents();
-      events.push({ ts: now.getTime(), kind });
-      saveEvents(events);
-      updateStreak(now);
-      render();
-      syncEvents().catch(console.error);
-    }
-
-    function updateStreak(now){
-      const meta = loadMeta();
-      const last = meta.lastActiveDay ? new Date(meta.lastActiveDay) : null;
-      const todayStart = startOfLocalDay(now).getTime();
-      if (!last) meta.streak = 1; else {
-        const lastStart = startOfLocalDay(last).getTime();
-        const diff = Math.round((todayStart - lastStart)/86400000);
-        if (diff===1) meta.streak=(meta.streak||0)+1; else if (diff>1) meta.streak=1;
-      }
-      meta.lastActiveDay = todayStart; saveMeta(meta);
-    }
-
-    // ===== Wire up UI =====
+    // Buttons
     qs('#btnLittle').addEventListener('click', ()=>record('little'));
     qs('#btnBig').addEventListener('click', ()=>record('big'));
     qs('#btnUndo').addEventListener('click', ()=>{ const e=loadEvents(); e.pop(); saveEvents(e); render(); });
@@ -245,26 +251,47 @@
     qs('#btnImport').addEventListener('click', ()=> qs('#importFile').click());
     qs('#importFile').addEventListener('change', (e)=>{ if (e.target.files && e.target.files[0]) { const reader = new FileReader(); reader.onload = ()=>{ try{ const parsed=JSON.parse(reader.result); if(!Array.isArray(parsed.events)) throw new Error('Invalid file'); localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed.events)); if(parsed.meta) localStorage.setItem(META_KEY, JSON.stringify(parsed.meta)); render(); alert('Import complete.'); } catch(err){ alert('Import failed: '+err.message); } }; reader.readAsText(e.target.files[0]); } });
 
-    // Login + username flow
+    // Sign in button
     qs('#btnLogin').addEventListener('click', async ()=>{
-      const user = await ensureSignedIn();
-      const profile = await getMyProfile();
-      if (profile?.username) { qs('#me').textContent = '@'+profile.username; await syncEvents(); await loadLeaderboard(); return; }
-      // show username modal
-      qs('#usernameModal').classList.remove('hidden');
-      qs('#usernameMsg').textContent = '';
-      qs('#usernameInput').value = '';
+      const me = qs('#me');
+      me.textContent = 'Signing in...';
+      try {
+        await ensureSignedIn();
+        const profile = await getMyProfile();
+        if (profile?.username) {
+          me.textContent = '@'+profile.username;
+        } else {
+          me.textContent = 'Pick a username';
+          qs('#usernameMsg').textContent = '';
+          qs('#usernameInput').value = '';
+          qs('#usernameModal').classList.remove('hidden');
+        }
+        await syncEvents();
+        await loadLeaderboard();
+      } catch (err) {
+        console.error(err);
+        me.textContent = 'Not signed in';
+        alert(err.message);
+      }
     });
-    qs('#usernameCancel').addEventListener('click', ()=> qs('#usernameModal').classList.add('hidden'));
-    qs('#usernameSave').addEventListener('click', async ()=>{
+
+    // Username modal actions
+    qs('#usernameCancel').addEventListener('click', () => qs('#usernameModal').classList.add('hidden'));
+    qs('#usernameSave').addEventListener('click', async () => {
       const name = qs('#usernameInput').value;
+      const msg = qs('#usernameMsg');
+      msg.textContent = 'Saving...';
       try {
         const clean = await setUsername(name);
-        qs('#me').textContent = '@'+clean;
+        qs('#me').textContent = '@' + clean;
         qs('#usernameModal').classList.add('hidden');
         await syncEvents();
         await loadLeaderboard();
-      } catch(err){ qs('#usernameMsg').textContent = err.message; }
+        msg.textContent = '';
+      } catch (err) {
+        console.error(err);
+        msg.textContent = err.message; // shows real reason under the input
+      }
     });
 
     // Keyboard shortcuts
@@ -275,22 +302,22 @@
       if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='z'){ const evs=loadEvents(); evs.pop(); saveEvents(evs); render(); }
     });
 
-    // Initial
+    // Init
     (async function init(){
-      if ('serviceWorker' in navigator) {
-        try{ await navigator.serviceWorker.register('./sw.js'); }catch(e){}
-      }
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const profile = await getMyProfile();
-        if (profile?.username) qs('#me').textContent = '@'+profile.username; else qs('#me').textContent = 'Pick a username';
-        await syncEvents();
-      }
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const p = await getMyProfile();
+          qs('#me').textContent = p?.username ? '@'+p.username : 'Pick a username';
+          await syncEvents();
+        }
+      } catch (e) { console.warn('Init session check failed', e); }
       render();
       await loadLeaderboard();
-      qs('#btnRefreshLb').addEventListener('click', loadLeaderboard);
     })();
+  });
   </script>
 </body>
 </html>
+
 
