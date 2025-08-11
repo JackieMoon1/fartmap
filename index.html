@@ -4,69 +4,44 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FartMap — Track your toots</title>
+  <meta name="theme-color" content="#0f1221" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icons/pwa-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="./icons/pwa-192.png" />
   <style>
-    :root{
-      --bg:#0f1221;/* deep navy */
-      --card:#171a2e;
-      --muted:#8b93b8;
-      --text:#e8ecff;
-      --accent:#8ef0a7;/* mint */
-      --accent2:#dba9ff;/* lilac */
-      --good:#a6ff9e;
-      --shadow: 0 10px 30px rgba(0,0,0,.35);
-      --radius: 16px;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
-      background: radial-gradient(1200px 600px at 10% 0%, #141836, #0b0d1a 60%), var(--bg);
-      color:var(--text);
-      display:flex; flex-direction:column;
-    }
+    :root{ --bg:#0f1221; --card:#171a2e; --muted:#8b93b8; --text:#e8ecff; --accent:#8ef0a7; --accent2:#dba9ff; --good:#a6ff9e; --shadow:0 10px 30px rgba(0,0,0,.35); --radius:16px; }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{ margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; background: radial-gradient(1200px 600px at 10% 0%, #141836, #0b0d1a 60%), var(--bg); color:var(--text); display:flex; flex-direction:column; }
     header{ padding:24px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
     .brand{display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:.3px}
     .logo{width:40px; height:40px; border-radius:10px; background: conic-gradient(from 210deg, var(--accent), var(--accent2)); box-shadow: var(--shadow)}
     .subtitle{color:var(--muted); font-weight:600; font-size:12px}
-
     main{width:min(1100px, 92vw); margin:0 auto 36px; display:grid; gap:18px}
     .grid{display:grid; grid-template-columns:repeat(12, 1fr); gap:18px}
     .card{background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)); border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); box-shadow:var(--shadow)}
-    .card .body{padding:18px}
-    .card h2{margin:4px 0 6px; font-size:18px}
-    .muted{color:var(--muted)}
-
+    .card .body{padding:18px} .card h2{margin:4px 0 6px; font-size:18px} .muted{color:var(--muted)}
     .controls{display:flex; gap:12px; flex-wrap:wrap}
-    button{
-      appearance:none; border:0; cursor:pointer; font-weight:700; letter-spacing:.2px;
-      padding:14px 16px; border-radius:14px; background:#202545; color:var(--text); box-shadow:var(--shadow);
-      transition: transform .06s ease, background .2s ease, opacity .2s ease;
-    }
-    button:hover{transform:translateY(-1px)}
-    button:active{transform:translateY(0)}
+    button{ appearance:none; border:0; cursor:pointer; font-weight:700; letter-spacing:.2px; padding:14px 16px; border-radius:14px; background:#202545; color:var(--text); box-shadow:var(--shadow); transition: transform .06s ease, background .2s ease, opacity .2s ease; }
+    button:hover{transform:translateY(-1px)} button:active{transform:translateY(0)}
     .btn-big{background: linear-gradient(180deg, #2a2f60, #282d58); border:1px solid rgba(255,255,255,.06)}
     .btn-little{background: linear-gradient(180deg, #1f3d36, #19392f); border:1px solid rgba(255,255,255,.06)}
     .btn-clear{background: transparent; border:1px dashed rgba(255,255,255,.25); color:#c7ccef}
-
     .today-wrap{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
     .pill{padding:10px 12px; border-radius:999px; background:#10142d; border:1px solid rgba(255,255,255,.06); font-weight:700}
     .pill.good{background: #10301f; color:var(--good); border-color: rgba(166,255,158,.25)}
-
     .stat-row{display:flex; gap:14px; flex-wrap:wrap}
     .stat{flex:1 1 180px; padding:12px 14px; border-radius:12px; background: #121638; border:1px solid rgba(255,255,255,.06)}
     .stat .big{font-size:28px; font-weight:900}
-
     table{width:100%; border-collapse:separate; border-spacing:0 10px}
     th{font-size:12px; text-transform:uppercase; letter-spacing:.14em; color:var(--muted); text-align:left}
-    td, th{padding:10px 12px}
-    tbody tr{background:#111430; border-radius:10px}
+    td, th{padding:10px 12px} tbody tr{background:#111430; border-radius:10px}
     tbody tr td:first-child{border-top-left-radius:10px; border-bottom-left-radius:10px}
     tbody tr td:last-child{border-top-right-radius:10px; border-bottom-right-radius:10px}
     tbody tr{outline:1px solid rgba(255,255,255,.06)}
-
     .foot{padding:12px 18px; color:var(--muted); font-size:12px; text-align:center}
     .kbd{display:inline-block; min-width:1.8ch; padding:.15rem .45rem; border-radius:6px; background:#0a0d1e; border:1px solid rgba(255,255,255,.12); color:#cfd5ff; box-shadow: inset 0 -2px 0 rgba(255,255,255,.05)}
-
     @media (max-width: 820px){ .grid{grid-template-columns:1fr} }
   </style>
 </head>
@@ -166,220 +141,40 @@
   </main>
 
   <script>
-    // ---- Storage + schema ---------------------------------------------------
     const STORAGE_KEY = 'fartmap_events_v1';
-    const META_KEY = 'fartmap_meta_v1'; // for streaks and last active day
+    const META_KEY = 'fartmap_meta_v1';
+    const loadEvents = ()=>{ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); } catch { return []; } };
+    const saveEvents = (l)=> localStorage.setItem(STORAGE_KEY, JSON.stringify(l));
+    const loadMeta = ()=>{ try { return JSON.parse(localStorage.getItem(META_KEY)||'{}'); } catch { return {}; } };
+    const saveMeta = (m)=> localStorage.setItem(META_KEY, JSON.stringify(m));
+    const fmtDate = (d)=> d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+    const isSameLocalDay=(a,b)=> a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+    const startOfLocalDay=(d)=> new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    function getISOWeek(date){ const d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate())); d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7)); const ys=new Date(Date.UTC(d.getUTCFullYear(),0,1)); return Math.ceil((((d-ys)/86400000)+1)/7);}
+    function getISOWeekYear(date){ const d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate())); d.setUTCDate(d.getUTCDate()+4-(d.getUTCDay()||7)); return d.getUTCFullYear(); }
+    function getISOWeekRange(year,week){ const simple=new Date(Date.UTC(year,0,1+(week-1)*7)); const dow=simple.getUTCDay(); let s=new Date(simple); if(dow<=4&&dow>0) s.setUTCDate(simple.getUTCDate()-simple.getUTCDay()+1); else s.setUTCDate(simple.getUTCDate()+8-simple.getUTCDay()); const e=new Date(s); e.setUTCDate(s.getUTCDate()+6); return [new Date(s.getTime()), new Date(e.getTime())]; }
+    function recordFart(kind){ const now=new Date(); const events=loadEvents(); events.push({ts:now.getTime(),kind:(kind==='big'?'big':'little')}); saveEvents(events); updateStreak(now); render(); flashButton(kind); }
+    function undoLast(){ const events=loadEvents(); if(!events.length) return; events.pop(); saveEvents(events); render(); }
+    function updateStreak(now){ const meta=loadMeta(); const last=meta.lastActiveDay?new Date(meta.lastActiveDay):null; const today=startOfLocalDay(now).getTime(); if(!last){ meta.streak=1; } else { const lastStart=startOfLocalDay(last).getTime(); const diff=Math.round((today-lastStart)/86400000); if(diff===0){} else if(diff===1){ meta.streak=(meta.streak||0)+1; } else if(diff>1){ meta.streak=1; } } meta.lastActiveDay=today; saveMeta(meta); }
+    function render(){ const events=loadEvents(); const now=new Date(); const todayEvents=events.filter(e=>isSameLocalDay(new Date(e.ts),now)); const tLittle=todayEvents.filter(e=>e.kind==='little').length; const tBig=todayEvents.filter(e=>e.kind==='big').length; const tTotal=todayEvents.length; document.getElementById('todayDate').textContent=`Today · ${fmtDate(now)}`; document.getElementById('todayLittle').textContent=tLittle; document.getElementById('todayBig').textContent=tBig; document.getElementById('todayTotal').textContent=tTotal; const allTime=events.length; document.getElementById('allTime').textContent=allTime; const y=now.getFullYear(); const ytd=events.filter(e=>new Date(e.ts).getFullYear()===y).length; document.getElementById('ytd').textContent=`YTD: ${ytd}`; const meta=loadMeta(); document.getElementById('streak').textContent=`Streak: ${meta.streak||0} day${(meta.streak||0)===1?'':'s'}`; const weeklyMap=new Map(); for(const e of events){ const d=new Date(e.ts); const wy=getISOWeekYear(d); const wn=getISOWeek(d); const key=`${wy}-W${String(wn).padStart(2,'0')}`; if(!weeklyMap.has(key)) weeklyMap.set(key,{year:wy,week:wn,little:0,big:0}); e.kind==='little'?weeklyMap.get(key).little++:weeklyMap.get(key).big++; } const weekly=Array.from(weeklyMap.values()).map(w=>({...w,total:w.little+w.big})).sort((a,b)=>(b.year-a.year)||(b.week-a.week)); const wBody=document.getElementById('weeklyBody'); wBody.innerHTML=''; for(const w of weekly){ const [ws,we]=getISOWeekRange(w.year,w.week); const tr=document.createElement('tr'); tr.innerHTML=`<td><strong>${w.year}-W${String(w.week).padStart(2,'0')}</strong></td><td>${fmtDate(ws)} → ${fmtDate(we)}</td><td><strong>${w.total}</strong></td><td>${w.little}</td><td>${w.big}</td>`; wBody.appendChild(tr);} const monthlyMap=new Map(); for(const e of events){ const d=new Date(e.ts); const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; if(!monthlyMap.has(key)) monthlyMap.set(key,{key,year:d.getFullYear(),month:d.getMonth()+1,little:0,big:0}); e.kind==='little'?monthlyMap.get(key).little++:monthlyMap.get(key).big++; } const monthly=Array.from(monthlyMap.values()).map(m=>({...m,total:m.little+m.big})).sort((a,b)=>(b.year-a.year)||(b.month-a.month)); const mBody=document.getElementById('monthlyBody'); mBody.innerHTML=''; for(const m of monthly){ const label=new Date(m.year,m.month-1,1).toLocaleDateString(undefined,{month:'long',year:'numeric'}); const tr=document.createElement('tr'); tr.innerHTML=`<td><strong>${label}</strong></td><td><strong>${m.total}</strong></td><td>${m.little}</td><td>${m.big}</td>`; mBody.appendChild(tr);} }
+    function flashButton(kind){ const btn=kind==='big'?document.getElementById('btnBig'):document.getElementById('btnLittle'); btn.style.opacity='0.75'; setTimeout(()=>{ btn.style.opacity='1'; },120); }
+    function exportData(){ const payload={events:loadEvents(),meta:loadMeta(),exportedAt:new Date().toISOString()}; const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`fartmap-backup-${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
+    function importData(file){ const reader=new FileReader(); reader.onload=()=>{ try{ const parsed=JSON.parse(reader.result); if(!parsed||!Array.isArray(parsed.events)) throw new Error('Invalid file'); localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed.events)); if(parsed.meta) localStorage.setItem(META_KEY, JSON.stringify(parsed.meta)); render(); alert('Import complete.'); }catch(err){ alert('Import failed: '+err.message);} }; reader.readAsText(file); }
+    document.getElementById('btnLittle').addEventListener('click',()=>recordFart('little'));
+    document.getElementById('btnBig').addEventListener('click',()=>recordFart('big'));
+    document.getElementById('btnUndo').addEventListener('click',undoLast);
+    document.getElementById('btnExport').addEventListener('click',exportData);
+    document.getElementById('btnImport').addEventListener('click',()=>document.getElementById('importFile').click());
+    document.getElementById('importFile').addEventListener('change',(e)=>{ if(e.target.files&&e.target.files[0]) importData(e.target.files[0]); });
 
-    function loadEvents(){
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-      catch { return []; }
-    }
-    function saveEvents(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
-    function loadMeta(){ try { return JSON.parse(localStorage.getItem(META_KEY) || '{}'); } catch { return {}; } }
-    function saveMeta(meta){ localStorage.setItem(META_KEY, JSON.stringify(meta)); }
-
-    // ---- Date helpers -------------------------------------------------------
-    function fmtDate(d){ return d.toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'}); }
-    function isSameLocalDay(a,b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
-    function startOfLocalDay(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
-
-    // ISO week (Mon-Sun)
-    function getISOWeek(date){
-      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-      d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
-      const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-      const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1)/7);
-      return weekNo;
-    }
-    function getISOWeekYear(date){
-      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-      d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
-      return d.getUTCFullYear();
-    }
-    function getISOWeekRange(year, week){
-      // returns local start & end dates of ISO week
-      const simple = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7));
-      const dow = simple.getUTCDay();
-      let ISOweekStart = new Date(simple);
-      if (dow <= 4 && dow > 0) ISOweekStart.setUTCDate(simple.getUTCDate() - simple.getUTCDay() + 1);
-      else ISOweekStart.setUTCDate(simple.getUTCDate() + 8 - simple.getUTCDay());
-      const ISOweekEnd = new Date(ISOweekStart); ISOweekEnd.setUTCDate(ISOweekStart.getUTCDate() + 6);
-      return [new Date(ISOweekStart.getTime()), new Date(ISOweekEnd.getTime())];
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(console.error);
+      });
     }
 
-    // ---- Core actions -------------------------------------------------------
-    function recordFart(kind){
-      const now = new Date();
-      const events = loadEvents();
-      events.push({ ts: now.getTime(), kind: (kind==='big'?'big':'little') });
-      saveEvents(events);
-      updateStreak(now);
-      render();
-      flashButton(kind);
-    }
-
-    function undoLast(){
-      const events = loadEvents();
-      if (!events.length) return;
-      events.pop();
-      saveEvents(events);
-      render();
-    }
-
-    function updateStreak(now){
-      const meta = loadMeta();
-      const last = meta.lastActiveDay ? new Date(meta.lastActiveDay) : null;
-      const todayStart = startOfLocalDay(now).getTime();
-      if (!last){
-        meta.streak = 1;
-      } else {
-        const lastStart = startOfLocalDay(last).getTime();
-        const diffDays = Math.round((todayStart - lastStart)/86400000);
-        if (diffDays === 0){ /* same day, keep streak */ }
-        else if (diffDays === 1){ meta.streak = (meta.streak||0) + 1; }
-        else if (diffDays > 1){ meta.streak = 1; }
-      }
-      meta.lastActiveDay = todayStart;
-      saveMeta(meta);
-    }
-
-    // ---- Aggregation + UI ---------------------------------------------------
-    function render(){
-      const events = loadEvents();
-      const now = new Date();
-
-      // Today
-      const todayEvents = events.filter(e => isSameLocalDay(new Date(e.ts), now));
-      const tLittle = todayEvents.filter(e=>e.kind==='little').length;
-      const tBig = todayEvents.filter(e=>e.kind==='big').length;
-      const tTotal = todayEvents.length;
-      document.getElementById('todayDate').textContent = `Today · ${fmtDate(now)}`;
-      document.getElementById('todayLittle').textContent = tLittle;
-      document.getElementById('todayBig').textContent = tBig;
-      document.getElementById('todayTotal').textContent = tTotal;
-
-      // All-time and YTD
-      const allTime = events.length;
-      document.getElementById('allTime').textContent = allTime;
-      const thisYear = now.getFullYear();
-      const ytdCount = events.filter(e => new Date(e.ts).getFullYear()===thisYear).length;
-      document.getElementById('ytd').textContent = `YTD: ${ytdCount}`;
-
-      // Streak
-      const meta = loadMeta();
-      document.getElementById('streak').textContent = `Streak: ${meta.streak||0} day${(meta.streak||0)===1?'':'s'}`;
-
-      // Weekly (ISO)
-      const weeklyMap = new Map(); // key: YYYY-Www
-      for (const e of events){
-        const d = new Date(e.ts);
-        const wy = getISOWeekYear(d);
-        const wn = getISOWeek(d);
-        const key = `${wy}-W${String(wn).padStart(2,'0')}`;
-        if (!weeklyMap.has(key)) weeklyMap.set(key, {year:wy, week:wn, little:0, big:0});
-        e.kind==='little' ? weeklyMap.get(key).little++ : weeklyMap.get(key).big++;
-      }
-      const weekly = Array.from(weeklyMap.values())
-        .map(w => ({...w, total: w.little + w.big}))
-        .sort((a,b)=> (b.year - a.year) || (b.week - a.week));
-
-      const wBody = document.getElementById('weeklyBody');
-      wBody.innerHTML = '';
-      for (const w of weekly){
-        const [ws, we] = getISOWeekRange(w.year, w.week);
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><strong>${w.year}-W${String(w.week).padStart(2,'0')}</strong></td>
-          <td>${fmtDate(ws)} → ${fmtDate(we)}</td>
-          <td><strong>${w.total}</strong></td>
-          <td>${w.little}</td>
-          <td>${w.big}</td>
-        `;
-        wBody.appendChild(tr);
-      }
-
-      // Monthly
-      const monthlyMap = new Map(); // key: YYYY-MM
-      for (const e of events){
-        const d = new Date(e.ts);
-        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-        if (!monthlyMap.has(key)) monthlyMap.set(key, {key, year:d.getFullYear(), month:d.getMonth()+1, little:0, big:0});
-        e.kind==='little' ? monthlyMap.get(key).little++ : monthlyMap.get(key).big++;
-      }
-      const monthly = Array.from(monthlyMap.values())
-        .map(m => ({...m, total: m.little + m.big}))
-        .sort((a,b)=> (b.year - a.year) || (b.month - a.month));
-
-      const mBody = document.getElementById('monthlyBody');
-      mBody.innerHTML = '';
-      for (const m of monthly){
-        const label = new Date(m.year, m.month-1, 1).toLocaleDateString(undefined,{month:'long', year:'numeric'});
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><strong>${label}</strong></td>
-          <td><strong>${m.total}</strong></td>
-          <td>${m.little}</td>
-          <td>${m.big}</td>
-        `;
-        mBody.appendChild(tr);
-      }
-    }
-
-    function flashButton(kind){
-      const btn = kind==='big' ? document.getElementById('btnBig') : document.getElementById('btnLittle');
-      btn.style.opacity = '0.75';
-      setTimeout(()=>{ btn.style.opacity='1'; }, 120);
-    }
-
-    // ---- Export / Import ----------------------------------------------------
-    function exportData(){
-      const payload = { events: loadEvents(), meta: loadMeta(), exportedAt: new Date().toISOString() };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `fartmap-backup-${new Date().toISOString().slice(0,10)}.json`;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
-    }
-    function importData(file){
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const parsed = JSON.parse(reader.result);
-          if (!parsed || !Array.isArray(parsed.events)) throw new Error('Invalid file');
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed.events));
-          if (parsed.meta) localStorage.setItem(META_KEY, JSON.stringify(parsed.meta));
-          render();
-          alert('Import complete.');
-        } catch(err){ alert('Import failed: ' + err.message); }
-      };
-      reader.readAsText(file);
-    }
-
-    // ---- Wire up UI ---------------------------------------------------------
-    document.getElementById('btnLittle').addEventListener('click', ()=>recordFart('little'));
-    document.getElementById('btnBig').addEventListener('click', ()=>recordFart('big'));
-    document.getElementById('btnUndo').addEventListener('click', undoLast);
-    document.getElementById('btnExport').addEventListener('click', exportData);
-    document.getElementById('btnImport').addEventListener('click', ()=> document.getElementById('importFile').click());
-    document.getElementById('importFile').addEventListener('change', (e)=>{
-      if (e.target.files && e.target.files[0]) importData(e.target.files[0]);
-    });
-
-    // keyboard shortcuts
-    window.addEventListener('keydown', (e)=>{
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key==='l' || e.key==='L'){ recordFart('little'); }
-      if (e.key==='b' || e.key==='B'){ recordFart('big'); }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase()==='z'){ undoLast(); }
-    });
-
-    // First paint
-    (function init(){
-      const meta = loadMeta();
-      if (typeof meta.streak !== 'number') { meta.streak = 0; saveMeta(meta); }
-      render();
-    })();
+    (function init(){ const meta=loadMeta(); if(typeof meta.streak!== 'number'){ meta.streak=0; saveMeta(meta);} render(); })();
   </script>
 </body>
 </html>
